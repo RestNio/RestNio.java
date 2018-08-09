@@ -11,7 +11,7 @@ buildscript {
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 
-group = 'net.restnio'
+group = 'io.restn'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
 
