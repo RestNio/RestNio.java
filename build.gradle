@@ -1,3 +1,8 @@
+/**
+* Buildscript for RestNio
+*/
+
+// Build Plugins
 buildscript {
 	repositories {
 		mavenCentral()
@@ -11,23 +16,45 @@ buildscript {
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 
+// ==== General Settings ==== \\
 group = 'io.restn'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
+ext {
+	nettyVersion = '4.1.28.Final'
+	swaggerVersion = '1.5.21'
+	gsonVersion = "2.8.5"
+	jwtVersion = '3.4.0'
+	runtimeJavaDocVersion = '0.6.0'
+	jUnitVersion = "4.12"
+}
+// ==== General Settings ==== \\
 
 repositories {
 	mavenCentral()
-	maven { url 'https://jitpack.io' }
 }
 
 dependencies {
-  //compile 'com.github.7kasper:netty-rest:netty-rest-c03'
-  compile 'com.auth0:java-jwt:3.4.0'
-  compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.4'
-  //compile group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4'
-  testCompile 'junit:junit:4.12'
+	// Annotation Processors
+	annotationProcessor "com.github.therapi:therapi-runtime-javadoc-scribe:${runtimeJavaDocVersion}"
+	// Implementation
+	implementation "com.google.code.gson:gson:${gsonVersion}"
+	// Runtime Dependancies
+	compile "com.auth0:java-jwt:${jwtVersion}"
+	compile "com.github.therapi:therapi-runtime-javadoc:${runtimeJavaDocVersion}"
+	compile group: 'io.netty', name: 'netty-all', version: "${nettyVersion}"
+	compile group: 'io.swagger', name: 'swagger-core', version: "${swaggerVersion}"
+	// Test Dependancies
+	testCompile "junit:junit:${jUnitVersion}"
 }
 
+// Compiler Options
+tasks.withType(JavaCompile) {
+	// Retain javadocs.
+	options.compilerArgs << "-Ajavadoc.packages="
+}
+
+// Compile Order
 compileJava.dependsOn(clean)
 compileJava.finalizedBy(test)
 jar.enabled = false
