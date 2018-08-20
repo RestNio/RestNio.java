@@ -23,10 +23,11 @@ sourceCompatibility = 1.8
 ext {
 	nettyVersion = '4.1.28.Final'
 	swaggerVersion = '1.5.21'
+	slf4jVersion = '1.7.25'
 	gsonVersion = "2.8.5"
 	jwtVersion = '3.4.0'
 	runtimeJavaDocVersion = '0.6.0'
-	jUnitVersion = "4.12"
+	jUnitVersion = '4.12'
 }
 // ==== General Settings ==== \\
 
@@ -44,6 +45,7 @@ dependencies {
 	compile "com.github.therapi:therapi-runtime-javadoc:${runtimeJavaDocVersion}"
 	compile group: 'io.netty', name: 'netty-all', version: "${nettyVersion}"
 	compile group: 'io.swagger', name: 'swagger-core', version: "${swaggerVersion}"
+	compile group: 'org.slf4j', name: 'slf4j-jdk14', version: "${slf4jVersion}"
 	// Test Dependancies
 	testCompile "junit:junit:${jUnitVersion}"
 }

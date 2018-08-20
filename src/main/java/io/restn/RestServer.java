@@ -1,64 +1,109 @@
 package io.restn;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslContext;
 import io.restn.netty.http.HttpFrameHandler;
-import io.restn.netty.websocket.WebSocketFrameHandler;
+import io.restn.netty.util.EventLoopUtils;
+import io.restn.netty.websocket.server.WebSocketServerFrameHandler;
+import io.restn.netty.websocket.server.WebSocketServerGeneralProtocolHandler;
 
-public class RestServer {
+public class RestServer implements Runnable {
 
-	EventLoopGroup bossGroup;
-	EventLoopGroup workerGroup;
-	ServerBootstrap bootstrap;
+	private static final Logger logger = LoggerFactory.getLogger(RestServer.class);
 
+	private EventLoopGroup bossGroup;
+	private EventLoopGroup workerGroup;
+	private ServerBootstrap bootstrap;
+	private final boolean websocketEnabled;
+	private final int port;
 	
-	public RestServer () {
-		bossGroup = new NioEventLoopGroup();
-		workerGroup = new NioEventLoopGroup();
+
+	public RestServer(int port) {
+		this(port, true);
+	}
+
+	public RestServer(int port, boolean websocketEnabled) {
+		this(port, null, websocketEnabled);
+	}
+
+	public RestServer(int port, SslContext sslCtx, boolean websocketEnabled) {
+		this(port, sslCtx, websocketEnabled, true);
+	}
+
+	public RestServer(int port, SslContext sslCtx, boolean websocketEnabled, boolean preferEpoll) {
+		this.port = port;
+		this.websocketEnabled = websocketEnabled;
+		bossGroup = EventLoopUtils.newEventLoopGroup(preferEpoll);
+		workerGroup = EventLoopUtils.newEventLoopGroup(preferEpoll);
 		bootstrap = new ServerBootstrap();
 		bootstrap.group(bossGroup, workerGroup)
 				 .channel(NioServerSocketChannel.class)
 				 .handler(new LoggingHandler(LogLevel.INFO))
-				 .childHandler(new RestServerInitializer());
+				 .childHandler(new RestServerInitializer(sslCtx, websocketEnabled));
 	}
 
-	public void start() {
+	@Override
+	public void run() {
 		try {
-			Channel channel = bootstrap.bind(8080).sync().channel();
-			System.out.println("SERVER STARTED AT PORT 8080!");
-			channel.closeFuture().sync();
+			start();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} finally {
-			bossGroup.shutdownGracefully();
-			workerGroup.shutdownGracefully();
+			stop();
 		}
 	}
 
-	private static class RestServerInitializer extends ChannelInitializer<SocketChannel> {
+	public void start() throws InterruptedException {
+		Channel channel = bootstrap.bind(port).sync().channel();
+		logger.info("Server started at port " + port + ".");
+		channel.closeFuture().sync();
+	}
+
+	public void stop() {
+		bossGroup.shutdownGracefully();
+		workerGroup.shutdownGracefully();
+	}
+
+	public boolean websocketIsEnabled() {
+		return websocketEnabled;
+	}
+
+	protected static class RestServerInitializer extends ChannelInitializer<SocketChannel> {
+
+		private final SslContext sslCtx;
+		private final boolean websocketEnabled;
+
+		protected RestServerInitializer(SslContext sslCtx, boolean websocketEnabled) {
+			this.sslCtx = sslCtx;
+			this.websocketEnabled = websocketEnabled;
+		}
 
 		@Override
 		protected void initChannel(SocketChannel ch) throws Exception {
 			ChannelPipeline pipeline = ch.pipeline();
+			if (sslCtx != null) pipeline.addLast(sslCtx.newHandler(ch.alloc()));
 			pipeline.addLast(new HttpServerCodec());
 			pipeline.addLast(new HttpObjectAggregator(65536));
-			pipeline.addLast(new WebSocketServerCompressionHandler());
-			pipeline.addLast(new WebSocketServerProtocolHandler("/websocket", null, true));
+			if (websocketEnabled) pipeline.addLast(new WebSocketServerCompressionHandler());
+			if (websocketEnabled) pipeline.addLast(new WebSocketServerGeneralProtocolHandler());
 			pipeline.addLast(new HttpFrameHandler());
-			pipeline.addLast(new WebSocketFrameHandler());
+			if (websocketEnabled) pipeline.addLast(new WebSocketServerFrameHandler());
 		}
 
 	}
+
 }
