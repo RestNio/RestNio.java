@@ -9,7 +9,7 @@ public class TestSite implements RestInterface, RestNioServer {
 	/**
 	 * @return main page using get.
 	 */
-	public String ROOT() {
+	public String R00T() {
 		return "Welcome to the Test API";
 	}
 

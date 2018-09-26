@@ -31,6 +31,13 @@ ext {
 }
 // ==== General Settings ==== \\
 
+//Create Executable for now, this way I can test some stuff\\
+jar {
+    manifest {
+        attributes 'Main-Class': 'io.restn.RestNio'
+    }
+}
+
 repositories {
 	mavenCentral()
 }
@@ -56,8 +63,15 @@ tasks.withType(JavaCompile) {
 	options.compilerArgs << "-Ajavadoc.packages="
 }
 
+//Extract libraries for CHE
+task copyRuntimeLibs(type: Copy) {
+	into "lib"
+	from configurations.runtime
+}
+
 // Compile Order
 compileJava.dependsOn(clean)
 compileJava.finalizedBy(test)
 jar.enabled = false
 jar.finalizedBy(shadowJar)
+shadowJar.finalizedBy(copyRuntimeLibs)

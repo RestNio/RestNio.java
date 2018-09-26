@@ -9,7 +9,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
@@ -18,7 +17,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.restn.netty.http.HttpFrameHandler;
 import io.restn.netty.util.EventLoopUtils;
-import io.restn.netty.websocket.server.WebSocketServerFrameHandler;
+import io.restn.netty.websocket.WebSocketFrameHandler;
 import io.restn.netty.websocket.server.WebSocketServerGeneralProtocolHandler;
 
 public class RestServer implements Runnable {
@@ -51,7 +50,7 @@ public class RestServer implements Runnable {
 		workerGroup = EventLoopUtils.newEventLoopGroup(preferEpoll);
 		bootstrap = new ServerBootstrap();
 		bootstrap.group(bossGroup, workerGroup)
-				 .channel(NioServerSocketChannel.class)
+				 .channel(EventLoopUtils.getServerSocketChannel(preferEpoll))
 				 .handler(new LoggingHandler(LogLevel.INFO))
 				 .childHandler(new RestServerInitializer(sslCtx, websocketEnabled));
 	}
@@ -68,6 +67,7 @@ public class RestServer implements Runnable {
 	}
 
 	public void start() throws InterruptedException {
+		logger.warn("MEEEEEEP");
 		Channel channel = bootstrap.bind(port).sync().channel();
 		logger.info("Server started at port " + port + ".");
 		channel.closeFuture().sync();
@@ -78,7 +78,7 @@ public class RestServer implements Runnable {
 		workerGroup.shutdownGracefully();
 	}
 
-	public boolean websocketIsEnabled() {
+	public boolean isWebsocketEnabled() {
 		return websocketEnabled;
 	}
 
@@ -95,13 +95,13 @@ public class RestServer implements Runnable {
 		@Override
 		protected void initChannel(SocketChannel ch) throws Exception {
 			ChannelPipeline pipeline = ch.pipeline();
-			if (sslCtx != null) pipeline.addLast(sslCtx.newHandler(ch.alloc()));
-			pipeline.addLast(new HttpServerCodec());
-			pipeline.addLast(new HttpObjectAggregator(65536));
-			if (websocketEnabled) pipeline.addLast(new WebSocketServerCompressionHandler());
-			if (websocketEnabled) pipeline.addLast(new WebSocketServerGeneralProtocolHandler());
-			pipeline.addLast(new HttpFrameHandler());
-			if (websocketEnabled) pipeline.addLast(new WebSocketServerFrameHandler());
+			if (sslCtx != null) pipeline.addLast("SSL", sslCtx.newHandler(ch.alloc()));
+			pipeline.addLast("HttpCodec", new HttpServerCodec());
+			pipeline.addLast("HttpAggregator", new HttpObjectAggregator(65536));
+			if (websocketEnabled) pipeline.addLast("WebsocketComression", new WebSocketServerCompressionHandler());
+			if (websocketEnabled) pipeline.addLast("WebsocketProtocol", new WebSocketServerGeneralProtocolHandler());
+			pipeline.addLast("HttpFrame", new HttpFrameHandler());
+			if (websocketEnabled) pipeline.addLast("WebsocketFrame", new WebSocketFrameHandler());
 		}
 
 	}

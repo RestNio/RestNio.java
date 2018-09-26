@@ -1,4 +1,4 @@
-package io.restn.netty.websocket.server;
+package io.restn.netty.websocket;
 
 import java.util.Locale;
 
@@ -13,9 +13,9 @@ import io.restn.netty.websocket.server.events.WebSocketHandshakeCompleteEvent;
 
 import static io.restn.netty.websocket.server.WebSocketServerGeneralProtocolHandler.*;
 
-public class WebSocketServerFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
+public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
 
-	private static final Logger logger = LoggerFactory.getLogger(WebSocketServerFrameHandler.class);
+	private static final Logger logger = LoggerFactory.getLogger(WebSocketFrameHandler.class);
 
 	@Override
 	public void userEventTriggered(ChannelHandlerContext ctx, Object event) {

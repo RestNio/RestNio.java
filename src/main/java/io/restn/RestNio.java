@@ -7,7 +7,6 @@ import java.util.concurrent.ScheduledExecutorService;
  * Main AccessPoint to RestNio
  * @author 7kasper
  *
- *
  */
 public class RestNio {
 
