@@ -12,12 +12,17 @@ public class RestTextPacket extends RestPacket {
 	public RestTextPacket(String text) {
 		this(Unpooled.copiedBuffer(text, CharsetUtil.UTF_8), new PacketMetadata(), text);
 	}
+
     public RestTextPacket(ByteBuf data) {
         this(data, new PacketMetadata(), data.toString(CharsetUtil.UTF_8));
     }
+
+//    protected RestTextPacket(ByteBuf data, String text, Consumer<PacketMetadata> metaconstructor) {
+//		this(data, text, packet)    	
+//	}
+
     protected RestTextPacket(ByteBuf data, PacketMetadata metadata, String text) {
     	super(data, metadata);
-    	metadata.put("content", "meep");
     	this.text = text;
     }
 

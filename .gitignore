@@ -1,10 +1,9 @@
 # Build Folders #
 bin/
 build/
-libs/
+lib/
 target/
 gen/
-dllibs/
 
 .externalToolBuilders/
  # Eclipse Files #

@@ -57,6 +57,17 @@ dependencies {
 	testCompile "junit:junit:${jUnitVersion}"
 }
 
+task copyFinalJarToTarget(type: Copy) {
+	// JitPack searches for the output jar at the standard Gradle output directory (jar.archivePath)
+	// By copying it from there to our target destination JitPack can archive it in a Maven repository
+	from jar.archivePath.getPath()
+	into 'target'
+
+	logger.warn('iiiiieeee: ' + jar.baseName + '-all')
+	//remove version suffix
+	rename (jar.archiveName, jar.baseName + '.jar')
+}
+
 // Compiler Options
 tasks.withType(JavaCompile) {
 	// Retain javadocs.
@@ -74,4 +85,5 @@ compileJava.dependsOn(clean)
 compileJava.finalizedBy(test)
 jar.enabled = false
 jar.finalizedBy(shadowJar)
-shadowJar.finalizedBy(copyRuntimeLibs)
+shadowJar.dependsOn(copyRuntimeLibs)
+shadowJar.finalizedBy(copyFinalJarToTarget)
