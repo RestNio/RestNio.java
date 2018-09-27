@@ -1,9 +1,14 @@
 package io.restn.packet;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PacketMetadata {
+import org.apache.commons.lang3.SerializationUtils;
+
+public class PacketMetadata implements Serializable, Cloneable {
+
+	public static final long serialVersionUID = 2L;
 
 	private Map<String, Object> meta;
 
@@ -15,9 +20,22 @@ public class PacketMetadata {
 		this.meta = meta;
 	}
 
-	//public PacketMetadata clone(PacketMetadata clone) {
-		//return new PacketMetadata(clone.meta.)
-	//}
+    public PacketMetadata copy() {
+    	Map<String, Object> clonedMap = new HashMap<>();
+    	this.meta.forEach((key,  value) -> {
+    		if (value instanceof Serializable) {
+    			clonedMap.put(key, SerializationUtils.clone((Serializable) value));
+    		} else {
+    			clonedMap.put(key, value);
+    		}
+    	});
+		return new PacketMetadata(clonedMap);
+	}
+
+	@Override
+	public Object clone() {
+		return this.copy();
+	}
 
 	public PacketMetadata duplicate(PacketMetadata duplicate) {
 		return new PacketMetadata(duplicate.meta);

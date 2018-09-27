@@ -10,16 +10,26 @@ public class RestTextPacket extends RestPacket {
 	private String text;
 
 	public RestTextPacket(String text) {
-		this(Unpooled.copiedBuffer(text, CharsetUtil.UTF_8), text);
+		this(Unpooled.copiedBuffer(text, CharsetUtil.UTF_8), new PacketMetadata(), text);
 	}
     public RestTextPacket(ByteBuf data) {
-        this(data, data.toString(CharsetUtil.UTF_8));
+        this(data, new PacketMetadata(), data.toString(CharsetUtil.UTF_8));
     }
-    private RestTextPacket(ByteBuf data, String text) {
-    	super(data);
+    protected RestTextPacket(ByteBuf data, PacketMetadata metadata, String text) {
+    	super(data, metadata);
+    	metadata.put("content", "meep");
     	this.text = text;
     }
-    
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+		setData(Unpooled.copiedBuffer(text, CharsetUtil.UTF_8));
+	}
+
     @Override
     public ByteBufHolder copy() {
     	return new RestTextPacket(new String(text));
@@ -27,7 +37,7 @@ public class RestTextPacket extends RestPacket {
 
 	@Override
     public  ByteBufHolder duplicate() {
-    	return new RestTextPacket(data, text);
+    	return new RestTextPacket(data, metadata, text);
 	}
 
 }

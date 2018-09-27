@@ -14,6 +14,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
  */
 public class RestPacket implements ByteBufHolder {
 
+	protected int refCnt = 1;
 	protected ByteBuf data;
 	protected PacketMetadata metadata;
 
@@ -21,7 +22,7 @@ public class RestPacket implements ByteBufHolder {
 		this(data, new PacketMetadata());
 	}
 
-	public RestPacket(ByteBuf data, PacketMetadata metadata) {
+	protected RestPacket(ByteBuf data, PacketMetadata metadata) {
 		this.data = data;
 		this.metadata = metadata;
 	}
@@ -42,14 +43,27 @@ public class RestPacket implements ByteBufHolder {
 		return metadata;
 	}
 
+	public ByteBuf getData() {
+		return data;
+	}
+
+	public ByteBuf getRetainedData() {
+		return data.retain();
+	}
+
+	public void setData(ByteBuf data) {
+		this.data.release();
+		this.data = data;
+	}
+
     @Override
     public int refCnt() {
-        return data.refCnt();
+        return refCnt;
     }
 
     @Override
     public boolean release() {
-        return data.release();
+        return refCnt-- == 0;
     }
 
     @Override
@@ -64,12 +78,12 @@ public class RestPacket implements ByteBufHolder {
 
     @Override
     public ByteBufHolder copy() {
-    	return new RestPacket(data.copy());
+    	return new RestPacket(data.copy(), metadata.copy());
     }
 
     @Override
     public  ByteBufHolder duplicate() {
-    	return new RestPacket(data);
+    	return new RestPacket(data, metadata);
     }
 
     @Override
